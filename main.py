@@ -40,7 +40,7 @@ def custom_query(content: str):
     return {"data": r}
 
 @app.get("/node/status", tags=["System Health"])
-def monitor_the_node_status():
+def node_status():
     v = connection()
     try:
         r = v.go("""SELECT node_name, 
@@ -52,7 +52,7 @@ def monitor_the_node_status():
     return {"data": r}
 
 @app.get("/epoch/status", tags=["System Health"])
-def monitor_the_epoch_status():
+def epoch_status():
     v = connection()
     try:
         r = v.go("""SELECT current_epoch, 
@@ -67,7 +67,7 @@ def monitor_the_epoch_status():
     return {"data": r}
 
 @app.get("/delete/vector/count", tags=["System Health"])
-def monitor_the_delete_vector():
+def delete_vector():
     v = connection()
     try:
         r = v.go("SELECT COUNT(*) FROM v_monitor.delete_vectors;")
@@ -76,7 +76,7 @@ def monitor_the_delete_vector():
     return {"data": r}
 
 @app.get("/delete/vector", tags=["System Health"])
-def monitor_the_delete_vector():
+def delete_vector():
     v = connection()
     try:
         r = v.go("""SELECT node_name, 
@@ -93,7 +93,7 @@ def monitor_the_delete_vector():
     return {"data": r}
 
 @app.get("/delete/vector/ros/containers", tags=["System Health"])
-def monitor_the_delete_vector():
+def delete_vector():
     v = connection()
     try:
         r = v.go("""SELECT node_name, 
@@ -105,6 +105,41 @@ def monitor_the_delete_vector():
                  projection_schema, 
                  projection_name 
                  ORDER BY ros_count DESC;""")
+    except Exception as e:
+        return {"error": e}
+    return {"data": r}
+
+@app.get("/resource/pools", tags=["Resource Usage"])
+def resource_pools():
+    v = connection()
+    try:
+        r = v.go("""SELECT sysdate AS current_time, 
+                 node_name, 
+                 pool_name, 
+                 memory_inuse_kb, 
+                 general_memory_borrowed_kb, 
+                 running_query_count 
+                 FROM resource_pool_status
+                 WHERE pool_name IN ('general') 
+                 ORDER BY 1,2,3;""")
+    except Exception as e:
+        return {"error": e}
+    return {"data": r}
+
+@app.get("/resource/pools/queue/status", tags=["Resource Usage"])
+def resource_pool_queue_status():
+    v = connection()
+    try:
+        r = v.go("SELECT * FROM v_monitor.resource_queues;")
+    except Exception as e:
+        return {"error": e}
+    return {"data": r}
+
+@app.get("/resource/request/rejections", tags=["Resource Usage"])
+def resource_request_rejections():
+    v = connection()
+    try:
+        r = v.go("SELECT * FROM v_monitor.resource_rejections;")
     except Exception as e:
         return {"error": e}
     return {"data": r}
