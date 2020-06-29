@@ -235,3 +235,19 @@ def a_query_with_no_results_indicates_that_no_locks_are_in_use():
     except Exception as e:
         return {"error": e}
     return {"data": r}
+
+@app.get("/recovery/status/", tags=["Recovery"])
+def node_recovery_status():
+    v = connection()
+    try:
+        r = v.go(f"""SELECT node_name, 
+                 recover_epoch, 
+                 recovery_phase, 
+                 current_completed, 
+                 current_total, 
+                 is_running 
+                 FROM v_monitor.recovery_status 
+                 ORDER BY 1;""")
+    except Exception as e:
+        return {"error": e}
+    return {"data": r}
