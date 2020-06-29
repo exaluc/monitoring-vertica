@@ -161,3 +161,21 @@ def storage_space_availability():
     except Exception as e:
         return {"error": e}
     return {"data": r}
+
+@app.get("/active/sessions", tags=["Active Sessions"])
+def active_sessions():
+    v = connection()
+    try:
+        r = v.go("SELECT user_name, session_id, current_statement, statement_start FROM v_monitor.sessions;")
+    except Exception as e:
+        return {"error": e}
+    return {"data": r}
+
+@app.get("/active/sessions/close/{session_id}", tags=["Active Sessions"])
+def close_the_active_sessions(session_id: str):
+    v = connection()
+    try:
+        r = v.go(f"SELECT close_session ('{session_id}');")
+    except Exception as e:
+        return {"error": e}
+    return {"data": r}
