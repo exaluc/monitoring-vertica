@@ -221,3 +221,17 @@ def check_the_loading_progress_of_active_and_historical_queries():
     except Exception as e:
         return {"error": e}
     return {"data": r}
+
+@app.get("/lock/status/", tags=["Active Queries"])
+def a_query_with_no_results_indicates_that_no_locks_are_in_use():
+    v = connection()
+    try:
+        r = v.go(f"""SELECT locks.lock_mode, 
+                 locks.lock_scope, 
+                 substr(locks.transaction_description, 1, 100) AS "left", 
+                 locks.request_timestamp, 
+                 locks.grant_timestamp 
+                 FROM v_monitor.locks;""")
+    except Exception as e:
+        return {"error": e}
+    return {"data": r}
