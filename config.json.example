@@ -1,0 +1,9 @@
+{
+    "vertica": {
+        "host": "domain name or ip",
+        "port": 5433,
+        "user": "user",
+        "password": "pwd",
+        "database": "dbname"
+    }
+}
