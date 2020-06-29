@@ -193,7 +193,7 @@ def close_the_active_sessions(session_id: str):
 def get_a_list_of_queries_executing_at_the_moment():
     v = connection()
     try:
-        r = v.go(f"""SELECT node_name, 
+        r = v.go("""SELECT node_name, 
                  query, 
                  query_start, 
                  user_name, 
@@ -208,7 +208,7 @@ def get_a_list_of_queries_executing_at_the_moment():
 def check_the_loading_progress_of_active_and_historical_queries():
     v = connection()
     try:
-        r = v.go(f"""SELECT table_name, 
+        r = v.go("""SELECT table_name, 
                  read_bytes, 
                  input_file_size_bytes, 
                  accepted_row_count, 
@@ -226,7 +226,7 @@ def check_the_loading_progress_of_active_and_historical_queries():
 def a_query_with_no_results_indicates_that_no_locks_are_in_use():
     v = connection()
     try:
-        r = v.go(f"""SELECT locks.lock_mode, 
+        r = v.go("""SELECT locks.lock_mode, 
                  locks.lock_scope, 
                  substr(locks.transaction_description, 1, 100) AS "left", 
                  locks.request_timestamp, 
@@ -240,7 +240,7 @@ def a_query_with_no_results_indicates_that_no_locks_are_in_use():
 def node_recovery_status():
     v = connection()
     try:
-        r = v.go(f"""SELECT node_name, 
+        r = v.go("""SELECT node_name, 
                  recover_epoch, 
                  recovery_phase, 
                  current_completed, 
@@ -251,3 +251,39 @@ def node_recovery_status():
     except Exception as e:
         return {"error": e}
     return {"data": r}
+
+@app.get("/rebalance/status/", tags=["Rebalance"])
+def rebalance_status():
+    v = connection()
+    try:
+        r = v.go("SELECT GET_NODE_DEPENDENCIES();")
+    except Exception as e:
+        return {"error": e}
+    return {"data": r}
+
+@app.get("/overall/progress/rebalance/operation", tags=["Rebalance"])
+def progress_of_each_currently_executing_rebalance_operation():
+    v = connection()
+    try:
+        r = v.go("""SELECT rebalance_method 
+                 Rebalance_method, 
+                 Status, 
+                 COUNT(*) AS Count
+                 FROM 
+                 ( SELECT rebalance_method, 
+                 CASE WHEN (separated_percent = 100 AND transferred_percent = 100) 
+                 THEN 'Completed' 
+                 WHEN ( separated_percent <>  0 and separated_percent <> 100) 
+                 OR (transferred_percent <> 0 AND transferred_percent <> 100) 
+                 THEN 'In Progress' 
+                 ELSE 'Queued' 
+                 END AS  Status 
+                 FROM v_monitor.rebalance_projection_status 
+                 WHERE is_latest)
+                 AS tab 
+                 GROUP BY 1, 2 
+                 ORDER BY 1, 2;""")
+    except Exception as e:
+        return {"error": e}
+    return {"data": r}
+
