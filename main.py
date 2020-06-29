@@ -67,7 +67,7 @@ def epoch_status():
     return {"data": r}
 
 @app.get("/delete/vector/count", tags=["System Health"])
-def delete_vector():
+def gather_the_total_count_of_delete_vectors_for_the_system():
     v = connection()
     try:
         r = v.go("SELECT COUNT(*) FROM v_monitor.delete_vectors;")
@@ -93,7 +93,7 @@ def delete_vector():
     return {"data": r}
 
 @app.get("/delete/vector/ros/containers", tags=["System Health"])
-def delete_vector():
+def view_the_number_of_ROS_containers_per_projection_per_node():
     v = connection()
     try:
         r = v.go("""SELECT node_name, 
@@ -122,6 +122,15 @@ def resource_pools():
                  FROM resource_pool_status
                  WHERE pool_name IN ('general') 
                  ORDER BY 1,2,3;""")
+    except Exception as e:
+        return {"error": e}
+    return {"data": r}
+
+@app.get("/query/excessive/{memory}", tags=["Resource Usage"])
+def monitor_if_a_query_is_taking_excessive_memory_resource_and_causing_the_cluster_to_slow_down(memory: str):
+    v = connection()
+    try:
+        r = v.go(f"SELECT * FROM resource_acquisitions ORDER BY memory_inuse_kb desc limit {memory};")
     except Exception as e:
         return {"error": e}
     return {"data": r}
@@ -176,6 +185,39 @@ def close_the_active_sessions(session_id: str):
     v = connection()
     try:
         r = v.go(f"SELECT close_session ('{session_id}');")
+    except Exception as e:
+        return {"error": e}
+    return {"data": r}
+
+@app.get("/running/queries/", tags=["Active Queries"])
+def get_a_list_of_queries_executing_at_the_moment():
+    v = connection()
+    try:
+        r = v.go(f"""SELECT node_name, 
+                 query, 
+                 query_start, 
+                 user_name, 
+                 is_executing 
+                 FROM v_monitor.query_profiles 
+                 WHERE is_executing = 't';""")
+    except Exception as e:
+        return {"error": e}
+    return {"data": r}
+
+@app.get("/load/status/", tags=["Active Queries"])
+def check_the_loading_progress_of_active_and_historical_queries():
+    v = connection()
+    try:
+        r = v.go(f"""SELECT table_name, 
+                 read_bytes, 
+                 input_file_size_bytes, 
+                 accepted_row_count, 
+                 rejected_row_count, 
+                 parse_complete_percent, 
+                 sort_complete_percent 
+                 FROM load_streams 
+                 WHERE is_executing = 't' 
+                 ORDER BY table_name;""")
     except Exception as e:
         return {"error": e}
     return {"data": r}
