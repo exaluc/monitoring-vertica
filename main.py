@@ -43,7 +43,10 @@ def custom_query(content: str):
 def monitor_the_node_status():
     v = connection()
     try:
-        r = v.go("SELECT node_name, node_state FROM nodes ORDER BY 1;")
+        r = v.go("""SELECT node_name, 
+                 node_state 
+                 FROM nodes 
+                 ORDER BY 1;""")
     except Exception as e:
         return {"error": e}
     return {"data": r}
@@ -52,7 +55,56 @@ def monitor_the_node_status():
 def monitor_the_epoch_status():
     v = connection()
     try:
-        r = v.go("SELECT current_epoch, ahm_epoch, last_good_epoch, designed_fault_tolerance, current_fault_tolerance, wos_used_bytes, ros_used_bytes FROM system;")
+        r = v.go("""SELECT current_epoch, 
+                 ahm_epoch, 
+                 last_good_epoch, 
+                 designed_fault_tolerance, 
+                 current_fault_tolerance, 
+                 wos_used_bytes, 
+                 ros_used_bytes FROM system;""")
+    except Exception as e:
+        return {"error": e}
+    return {"data": r}
+
+@app.get("/delete/vector/count", tags=["System Health"])
+def monitor_the_delete_vector():
+    v = connection()
+    try:
+        r = v.go("SELECT COUNT(*) FROM v_monitor.delete_vectors;")
+    except Exception as e:
+        return {"error": e}
+    return {"data": r}
+
+@app.get("/delete/vector", tags=["System Health"])
+def monitor_the_delete_vector():
+    v = connection()
+    try:
+        r = v.go("""SELECT node_name, 
+                 schema_name, 
+                 projection_name, 
+                 total_row_count, 
+                 deleted_row_count, 
+                 delete_vector_count 
+                 FROM storage_containers 
+                 WHERE deleted_row_count > total_row_count*.05::float 
+                 ORDER BY deleted_row_count desc;""")
+    except Exception as e:
+        return {"error": e}
+    return {"data": r}
+
+@app.get("/delete/vector/ros/containers", tags=["System Health"])
+def monitor_the_delete_vector():
+    v = connection()
+    try:
+        r = v.go("""SELECT node_name, 
+                 projection_schema, 
+                 projection_name, 
+                 SUM(ros_count) AS ros_count 
+                 FROM v_monitor.projection_storage 
+                 GROUP BY node_name, 
+                 projection_schema, 
+                 projection_name 
+                 ORDER BY ros_count DESC;""")
     except Exception as e:
         return {"error": e}
     return {"data": r}
