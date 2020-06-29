@@ -287,3 +287,39 @@ def progress_of_each_currently_executing_rebalance_operation():
         return {"error": e}
     return {"data": r}
 
+@app.get("/execution/time/{limit}", tags=["Historical Activities"])
+def queries_based_on_execution_time(limit: int):
+    v = connection()
+    try:
+        r = v.go(f"""SELECT user_name, 
+                 start_timestamp, 
+                 request_duration_ms, 
+                 transaction_id, 
+                 statement_id, 
+                 substr(request, 0, 1000) as request 
+                 FROM v_monitor.query_requests 
+                 WHERE transaction_id > 0 
+                 ORDER BY request_duration_ms 
+                 DESC limit {limit};""")
+    except Exception as e:
+        return {"error": e}
+    return {"data": r}
+
+@app.get("/memory/usage", tags=["Historical Activities"])
+def memory_usage_for_a_particular_query():
+    v = connection()
+    try:
+        r = v.go(f"""SELECT node_name, 
+                 transaction_id, 
+                 statement_id, 
+                 user_name, 
+                 start_timestamp, 
+                 request_duration_ms, 
+                 memory_acquired_mb, 
+                 substr(request, 1, 100) AS request 
+                 FROM v_monitor.query_requests 
+                 WHERE transaction_id = transaction_id 
+                 AND statement_id = statement_id;""")
+    except Exception as e:
+        return {"error": e}
+    return {"data": r}
