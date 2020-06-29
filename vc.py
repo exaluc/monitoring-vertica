@@ -12,6 +12,9 @@ class vc(object):
     def query(self, query):
         self.cur.execute(query)
 
+    def commit(self):
+    	self.co.commit()
+
     def close(self):
         self.co.close()
         print('vertica: connection closed')

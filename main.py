@@ -23,6 +23,15 @@ class connection(vc):
         r = self.fetchall()
         self.close()
         return r
+    
+    def custom(self, query, commit):
+        q = f'{query}'
+        self.query(q)
+        r = self.fetchall()
+        if commit:
+            self.commit()
+        self.close()
+        return r
 
 app = FastAPI(title="Monitoring Vertica")
 
@@ -31,10 +40,10 @@ def read_root():
     return {"Hello": "World"}
 
 @app.get("/query/{content}", tags=["query"])
-def custom_query(content: str):
+def custom_query(content: str, commit: bool = False):
     v = connection()
     try:
-        r = v.go(content)
+        r = v.custom(content, commit)
     except Exception as e:
         return {"error": e}
     return {"data": r}
@@ -356,6 +365,24 @@ def view_the_row_count_per_segmented_projection_per_node():
                  ORDER BY ps.projection_schema, 
                  ps.projection_name, 
                  ps.node_name;""")
+    except Exception as e:
+        return {"error": e}
+    return {"data": r}
+
+@app.get("/load/streams", tags=["Performance"])
+def view_the_performance_of_load_streams():
+    v = connection()
+    try:
+        r = v.go("""SELECT schema_name, 
+                 table_name, 
+                 load_start, 
+                 load_duration_ms, 
+                 is_executing, 
+                 parse_complete_percent, 
+                 sort_complete_percent, 
+                 accepted_row_count, 
+                 rejected_row_count 
+                 FROM v_monitor.load_streams;""")
     except Exception as e:
         return {"error": e}
     return {"data": r}
