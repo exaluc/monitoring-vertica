@@ -309,7 +309,7 @@ def queries_based_on_execution_time(limit: int):
 def memory_usage_for_a_particular_query():
     v = connection()
     try:
-        r = v.go(f"""SELECT node_name, 
+        r = v.go("""SELECT node_name, 
                  transaction_id, 
                  statement_id, 
                  user_name, 
@@ -320,6 +320,42 @@ def memory_usage_for_a_particular_query():
                  FROM v_monitor.query_requests 
                  WHERE transaction_id = transaction_id 
                  AND statement_id = statement_id;""")
+    except Exception as e:
+        return {"error": e}
+    return {"data": r}
+
+@app.get("/partitions", tags=["Object Statistics"])
+def view_the_partition_count_per_node_per_projection():
+    v = connection()
+    try:
+        r = v.go("""SELECT node_name, 
+                 projection_name, 
+                 count(partition_key) 
+                 FROM v_monitor.partitions 
+                 GROUP BY node_name, 
+                 projection_name 
+                 ORDER BY node_name, 
+                 projection_name;""")
+    except Exception as e:
+        return {"error": e}
+    return {"data": r}
+
+@app.get("/segmentation/data/skew", tags=["Object Statistics"])
+def view_the_row_count_per_segmented_projection_per_node():
+    v = connection()
+    try:
+        r = v.go("""SELECT ps.node_name, 
+                 ps.projection_schema, 
+                 ps.projection_name, 
+                 ps.row_count 
+                 FROM v_monitor.projection_storage ps
+                 INNER JOIN v_catalog.projections p 
+                 ON ps.projection_schema = p.projection_schema 
+                 AND ps.projection_name = p.projection_name 
+                 WHERE p.is_segmented 
+                 ORDER BY ps.projection_schema, 
+                 ps.projection_name, 
+                 ps.node_name;""")
     except Exception as e:
         return {"error": e}
     return {"data": r}
