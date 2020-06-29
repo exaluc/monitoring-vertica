@@ -143,3 +143,21 @@ def resource_request_rejections():
     except Exception as e:
         return {"error": e}
     return {"data": r}
+
+@app.get("/resource/bottleneck", tags=["Resource Usage"])
+def resource_bottleneck():
+    v = connection()
+    try:
+        r = v.go("SELECT * FROM v_monitor.system_resource_usage ORDER BY end_time DESC;")
+    except Exception as e:
+        return {"error": e}
+    return {"data": r}
+
+@app.get("/storage/space", tags=["Resource Usage"])
+def storage_space_availability():
+    v = connection()
+    try:
+        r = v.go("SELECT * FROM v_monitor.storage_usage ORDER BY poll_timestamp DESC;")
+    except Exception as e:
+        return {"error": e}
+    return {"data": r}
