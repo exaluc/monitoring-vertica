@@ -9,18 +9,6 @@ This project was made for test FastApi.
 
 The API endpoint use queries (**bonus a custom query with commit**) and techniques from [`vertica`](https://www.vertica.com/kb/Best-Practices-for-Monitoring-Vertica/Content/BestPractices/BestPracticesforMonitoringVertica.htm) for monitoring the following areas of your database:
 
-    System health
-    Resource usage
-    Active sessions
-    Active transactions
-    Recovery
-    Rebalance
-    Historical activities
-    Object statistics
-    Query performance
-    Monitor DC tables
-
-
 ![](screens/doc.png)
 ![](screens/redoc.png)
 
