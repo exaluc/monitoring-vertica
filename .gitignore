@@ -141,3 +141,5 @@ cython_debug/
 *.sqlite
 
 config.json
+
+monvertica
