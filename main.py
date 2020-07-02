@@ -254,7 +254,7 @@ def close_the_active_sessions(session_id: str):
     return {"data": r}
 
 
-@app.get("/running/queries/", tags=["Active Queries"])
+@app.get("/running/queries", tags=["Active Queries"])
 def get_a_list_of_queries_executing_at_the_moment():
     v = connection()
     try:
@@ -270,7 +270,7 @@ def get_a_list_of_queries_executing_at_the_moment():
     return {"data": r}
 
 
-@app.get("/load/status/", tags=["Active Queries"])
+@app.get("/load/status", tags=["Active Queries"])
 def check_the_loading_progress_of_active_and_historical_queries():
     v = connection()
     try:
@@ -289,7 +289,7 @@ def check_the_loading_progress_of_active_and_historical_queries():
     return {"data": r}
 
 
-@app.get("/lock/status/", tags=["Active Queries"])
+@app.get("/lock/status", tags=["Active Queries"])
 def a_query_with_no_results_indicates_that_no_locks_are_in_use():
     v = connection()
     try:
@@ -304,7 +304,7 @@ def a_query_with_no_results_indicates_that_no_locks_are_in_use():
     return {"data": r}
 
 
-@app.get("/recovery/status/", tags=["Recovery"])
+@app.get("/recovery/status", tags=["Recovery"])
 def node_recovery_status():
     v = connection()
     try:
@@ -321,7 +321,7 @@ def node_recovery_status():
     return {"data": r}
 
 
-@app.get("/rebalance/status/", tags=["Rebalance"])
+@app.get("/rebalance/status", tags=["Rebalance"])
 def rebalance_status():
     v = connection()
     try:
