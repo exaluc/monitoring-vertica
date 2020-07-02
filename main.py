@@ -7,7 +7,6 @@ from fastapi.openapi.docs import (
     get_swagger_ui_html,
     get_swagger_ui_oauth2_redirect_html,
 )
-from fastapi.staticfiles import StaticFiles
 
 with open('config.json') as jf:
     d = json.load(jf)
@@ -54,7 +53,7 @@ async def custom_swagger_ui_html():
         oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
         swagger_js_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui-bundle.js",
         swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui.css",
-        swagger_favicon_url="https://fastapi.tiangolo.com/img/favicon.png",
+        swagger_favicon_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@3/favicon-32x32.png",
     )
 
 
@@ -69,6 +68,7 @@ async def redoc_html():
         openapi_url=app.openapi_url,
         title=app.title + " - ReDoc",
         redoc_js_url="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js",
+        redoc_favicon_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@3/favicon-32x32.png",
     )
 
 
