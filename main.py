@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from vc import vc
 import json
+from fastapi.openapi.utils import get_openapi
 
 with open('config.json') as jf:
         d = json.load(jf)
@@ -386,3 +387,21 @@ def view_the_performance_of_load_streams():
     except Exception as e:
         return {"error": e}
     return {"data": r}
+
+def custom_openapi(openapi_prefix: str):
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title="Monitoring Vertica",
+        version="0.0.1",
+        description="Vertica api <br><br> Project launched for test the <a href='https://fastapi.tiangolo.com/' target='_blank'>FastAPI</a> <br><br> Based on: <a href='https://www.vertica.com/kb/Best-Practices-for-Monitoring-Vertica/Content/BestPractices/BestPracticesforMonitoringVertica.htm' target='_blank'>Best Practices for Monitoring Vertica</a>",
+        routes=app.routes,
+        openapi_prefix=openapi_prefix,
+    )
+    openapi_schema["info"]["x-logo"] = {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Vertica_pos_blk_rgb.svg/300px-Vertica_pos_blk_rgb.svg.png"
+    }
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
