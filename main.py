@@ -2,29 +2,37 @@ from fastapi import FastAPI
 from vc import vc
 import json
 from fastapi.openapi.utils import get_openapi
+from fastapi.openapi.docs import (
+    get_redoc_html,
+    get_swagger_ui_html,
+    get_swagger_ui_oauth2_redirect_html,
+)
+from fastapi.staticfiles import StaticFiles
 
 with open('config.json') as jf:
-        d = json.load(jf)
-        vh = d['vertica']['host']
-        vpo = d['vertica']['port']
-        vu = d['vertica']['user']
-        vp = d['vertica']['password']
-        vd = d['vertica']['database']
+    d = json.load(jf)
+    vh = d['vertica']['host']
+    vpo = d['vertica']['port']
+    vu = d['vertica']['user']
+    vp = d['vertica']['password']
+    vd = d['vertica']['database']
+
 
 class connection(vc):
     ci = {'host': vh,
-             'port': vpo,
-             'user': vu,
-             'password': vp,
-             'database': vd,
-             'read_timeout': 100}
+          'port': vpo,
+          'user': vu,
+          'password': vp,
+          'database': vd,
+          'read_timeout': 100}
+
     def go(self, query):
         q = f'{query}'
         self.query(q)
         r = self.fetchall()
         self.close()
         return r
-    
+
     def custom(self, query, commit):
         q = f'{query}'
         self.query(q)
@@ -34,11 +42,40 @@ class connection(vc):
         self.close()
         return r
 
-app = FastAPI(title="Monitoring Vertica")
+
+app = FastAPI(title="Monitoring Vertica", docs_url=None, redoc_url=None)
+
+
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui_html():
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title=app.title + " - Swagger UI",
+        oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
+        swagger_js_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui-bundle.js",
+        swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui.css",
+        swagger_favicon_url="https://fastapi.tiangolo.com/img/favicon.png",
+    )
+
+
+@app.get(app.swagger_ui_oauth2_redirect_url, include_in_schema=False)
+async def swagger_ui_redirect():
+    return get_swagger_ui_oauth2_redirect_html()
+
+
+@app.get("/redoc", include_in_schema=False)
+async def redoc_html():
+    return get_redoc_html(
+        openapi_url=app.openapi_url,
+        title=app.title + " - ReDoc",
+        redoc_js_url="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js",
+    )
+
 
 @app.get("/", tags=["index"])
 def read_root():
     return {"Hello": "World"}
+
 
 @app.get("/query/{content}", tags=["query"])
 def custom_query(content: str, commit: bool = False):
@@ -48,6 +85,7 @@ def custom_query(content: str, commit: bool = False):
     except Exception as e:
         return {"error": e}
     return {"data": r}
+
 
 @app.get("/node/status", tags=["System Health"])
 def node_status():
@@ -60,6 +98,7 @@ def node_status():
     except Exception as e:
         return {"error": e}
     return {"data": r}
+
 
 @app.get("/epoch/status", tags=["System Health"])
 def epoch_status():
@@ -76,6 +115,7 @@ def epoch_status():
         return {"error": e}
     return {"data": r}
 
+
 @app.get("/delete/vector/count", tags=["System Health"])
 def gather_the_total_count_of_delete_vectors_for_the_system():
     v = connection()
@@ -84,6 +124,7 @@ def gather_the_total_count_of_delete_vectors_for_the_system():
     except Exception as e:
         return {"error": e}
     return {"data": r}
+
 
 @app.get("/delete/vector", tags=["System Health"])
 def delete_vector():
@@ -102,6 +143,7 @@ def delete_vector():
         return {"error": e}
     return {"data": r}
 
+
 @app.get("/delete/vector/ros/containers", tags=["System Health"])
 def view_the_number_of_ROS_containers_per_projection_per_node():
     v = connection()
@@ -118,6 +160,7 @@ def view_the_number_of_ROS_containers_per_projection_per_node():
     except Exception as e:
         return {"error": e}
     return {"data": r}
+
 
 @app.get("/resource/pools", tags=["Resource Usage"])
 def resource_pools():
@@ -136,14 +179,17 @@ def resource_pools():
         return {"error": e}
     return {"data": r}
 
+
 @app.get("/query/excessive/{memory}", tags=["Resource Usage"])
 def monitor_if_a_query_is_taking_excessive_memory_resource_and_causing_the_cluster_to_slow_down(memory: str):
     v = connection()
     try:
-        r = v.go(f"SELECT * FROM resource_acquisitions ORDER BY memory_inuse_kb desc limit {memory};")
+        r = v.go(
+            f"SELECT * FROM resource_acquisitions ORDER BY memory_inuse_kb desc limit {memory};")
     except Exception as e:
         return {"error": e}
     return {"data": r}
+
 
 @app.get("/resource/pools/queue/status", tags=["Resource Usage"])
 def resource_pool_queue_status():
@@ -154,6 +200,7 @@ def resource_pool_queue_status():
         return {"error": e}
     return {"data": r}
 
+
 @app.get("/resource/request/rejections", tags=["Resource Usage"])
 def resource_request_rejections():
     v = connection()
@@ -163,32 +210,39 @@ def resource_request_rejections():
         return {"error": e}
     return {"data": r}
 
+
 @app.get("/resource/bottleneck", tags=["Resource Usage"])
 def resource_bottleneck():
     v = connection()
     try:
-        r = v.go("SELECT * FROM v_monitor.system_resource_usage ORDER BY end_time DESC;")
+        r = v.go(
+            "SELECT * FROM v_monitor.system_resource_usage ORDER BY end_time DESC;")
     except Exception as e:
         return {"error": e}
     return {"data": r}
+
 
 @app.get("/storage/space", tags=["Resource Usage"])
 def storage_space_availability():
     v = connection()
     try:
-        r = v.go("SELECT * FROM v_monitor.storage_usage ORDER BY poll_timestamp DESC;")
+        r = v.go(
+            "SELECT * FROM v_monitor.storage_usage ORDER BY poll_timestamp DESC;")
     except Exception as e:
         return {"error": e}
     return {"data": r}
+
 
 @app.get("/active/sessions", tags=["Active Sessions"])
 def active_sessions():
     v = connection()
     try:
-        r = v.go("SELECT user_name, session_id, current_statement, statement_start FROM v_monitor.sessions;")
+        r = v.go(
+            "SELECT user_name, session_id, current_statement, statement_start FROM v_monitor.sessions;")
     except Exception as e:
         return {"error": e}
     return {"data": r}
+
 
 @app.get("/active/sessions/close/{session_id}", tags=["Active Sessions"])
 def close_the_active_sessions(session_id: str):
@@ -198,6 +252,7 @@ def close_the_active_sessions(session_id: str):
     except Exception as e:
         return {"error": e}
     return {"data": r}
+
 
 @app.get("/running/queries/", tags=["Active Queries"])
 def get_a_list_of_queries_executing_at_the_moment():
@@ -213,6 +268,7 @@ def get_a_list_of_queries_executing_at_the_moment():
     except Exception as e:
         return {"error": e}
     return {"data": r}
+
 
 @app.get("/load/status/", tags=["Active Queries"])
 def check_the_loading_progress_of_active_and_historical_queries():
@@ -232,6 +288,7 @@ def check_the_loading_progress_of_active_and_historical_queries():
         return {"error": e}
     return {"data": r}
 
+
 @app.get("/lock/status/", tags=["Active Queries"])
 def a_query_with_no_results_indicates_that_no_locks_are_in_use():
     v = connection()
@@ -245,6 +302,7 @@ def a_query_with_no_results_indicates_that_no_locks_are_in_use():
     except Exception as e:
         return {"error": e}
     return {"data": r}
+
 
 @app.get("/recovery/status/", tags=["Recovery"])
 def node_recovery_status():
@@ -262,6 +320,7 @@ def node_recovery_status():
         return {"error": e}
     return {"data": r}
 
+
 @app.get("/rebalance/status/", tags=["Rebalance"])
 def rebalance_status():
     v = connection()
@@ -270,6 +329,7 @@ def rebalance_status():
     except Exception as e:
         return {"error": e}
     return {"data": r}
+
 
 @app.get("/overall/progress/rebalance/operation", tags=["Rebalance"])
 def progress_of_each_currently_executing_rebalance_operation():
@@ -297,6 +357,7 @@ def progress_of_each_currently_executing_rebalance_operation():
         return {"error": e}
     return {"data": r}
 
+
 @app.get("/execution/time/{limit}", tags=["Historical Activities"])
 def queries_based_on_execution_time(limit: int):
     v = connection()
@@ -314,6 +375,7 @@ def queries_based_on_execution_time(limit: int):
     except Exception as e:
         return {"error": e}
     return {"data": r}
+
 
 @app.get("/memory/usage", tags=["Historical Activities"])
 def memory_usage_for_a_particular_query():
@@ -334,6 +396,7 @@ def memory_usage_for_a_particular_query():
         return {"error": e}
     return {"data": r}
 
+
 @app.get("/partitions", tags=["Object Statistics"])
 def view_the_partition_count_per_node_per_projection():
     v = connection()
@@ -349,6 +412,7 @@ def view_the_partition_count_per_node_per_projection():
     except Exception as e:
         return {"error": e}
     return {"data": r}
+
 
 @app.get("/segmentation/data/skew", tags=["Object Statistics"])
 def view_the_row_count_per_segmented_projection_per_node():
@@ -370,6 +434,7 @@ def view_the_row_count_per_segmented_projection_per_node():
         return {"error": e}
     return {"data": r}
 
+
 @app.get("/load/streams", tags=["Performance"])
 def view_the_performance_of_load_streams():
     v = connection()
@@ -388,6 +453,7 @@ def view_the_performance_of_load_streams():
         return {"error": e}
     return {"data": r}
 
+
 def custom_openapi(openapi_prefix: str):
     if app.openapi_schema:
         return app.openapi_schema
@@ -403,5 +469,6 @@ def custom_openapi(openapi_prefix: str):
     }
     app.openapi_schema = openapi_schema
     return app.openapi_schema
+
 
 app.openapi = custom_openapi
