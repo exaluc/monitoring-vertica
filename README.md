@@ -55,7 +55,7 @@ Install with venv:
 
 ## Meta
 
-Lucian – [@odgon](https://twitter.com/odgon)
+Lucian – [@exaluc](https://twitter.com/exaluc)
 
 Distributed under the MIT license. See ``LICENSE`` for more information.
 
